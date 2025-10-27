@@ -1,0 +1,222 @@
+[
+  {
+    "courseName": "Computer Science 101",
+    "courseId": "CS 101",
+    "semester": "Fall 2025",
+    "section": "3",
+    "sessionDate": "2025-10-27T03:33:46.433Z",
+    "students": [
+      {
+        "id": "S001",
+        "name": "Alice Johnson",
+        "attended": true,
+        "attendedAt": "2025-10-27T03:33:26.498Z"
+      },
+      {
+        "id": "S002",
+        "name": "Bob Smith",
+        "attended": false
+      },
+      {
+        "id": "S003",
+        "name": "Charlie Brown",
+        "attended": false
+      },
+      {
+        "id": "S004",
+        "name": "Diana Prince",
+        "attended": false
+      },
+      {
+        "id": "S005",
+        "name": "Edward Norton",
+        "attended": false
+      },
+      {
+        "id": "S006",
+        "name": "Fiona Apple",
+        "attended": false
+      },
+      {
+        "id": "S007",
+        "name": "George Martin",
+        "attended": false
+      },
+      {
+        "id": "S008",
+        "name": "Hannah Montana",
+        "attended": false
+      },
+      {
+        "id": "S009",
+        "name": "Isaac Newton",
+        "attended": false
+      },
+      {
+        "id": "S010",
+        "name": "Julia Roberts",
+        "attended": false
+      },
+      {
+        "id": "S011",
+        "name": "Kevin Hart",
+        "attended": false
+      },
+      {
+        "id": "S012",
+        "name": "Laura Palmer",
+        "attended": false
+      },
+      {
+        "id": "S013",
+        "name": "Michael Jordan",
+        "attended": false
+      },
+      {
+        "id": "S014",
+        "name": "Nancy Drew",
+        "attended": false
+      },
+      {
+        "id": "S015",
+        "name": "Oliver Twist",
+        "attended": false
+      },
+      {
+        "id": "S016",
+        "name": "Patricia Lee",
+        "attended": false
+      },
+      {
+        "id": "S017",
+        "name": "Quincy Jones",
+        "attended": false
+      },
+      {
+        "id": "S018",
+        "name": "Rachel Green",
+        "attended": false
+      },
+      {
+        "id": "S019",
+        "name": "Steve Rogers",
+        "attended": false
+      },
+      {
+        "id": "S020",
+        "name": "Tina Turner",
+        "attended": false
+      }
+    ]
+  },
+  {
+    "courseName": "Computer Science 101",
+    "courseId": "CS 101",
+    "semester": "Fall 2025",
+    "section": "3",
+    "sessionDate": "2025-10-27T03:45:39.122Z",
+    "students": [
+      {
+        "id": "S001",
+        "name": "Alice Johnson",
+        "attended": false
+      },
+      {
+        "id": "S002",
+        "name": "Bob Smith",
+        "attended": true,
+        "attendedAt": "2025-10-27T03:45:34.562Z"
+      },
+      {
+        "id": "S003",
+        "name": "Charlie Brown",
+        "attended": false
+      },
+      {
+        "id": "S004",
+        "name": "Diana Prince",
+        "attended": false
+      },
+      {
+        "id": "S005",
+        "name": "Edward Norton",
+        "attended": false
+      },
+      {
+        "id": "S006",
+        "name": "Fiona Apple",
+        "attended": false
+      },
+      {
+        "id": "S007",
+        "name": "George Martin",
+        "attended": false
+      },
+      {
+        "id": "S008",
+        "name": "Hannah Montana",
+        "attended": false
+      },
+      {
+        "id": "S009",
+        "name": "Isaac Newton",
+        "attended": false
+      },
+      {
+        "id": "S010",
+        "name": "Julia Roberts",
+        "attended": false
+      },
+      {
+        "id": "S011",
+        "name": "Kevin Hart",
+        "attended": false
+      },
+      {
+        "id": "S012",
+        "name": "Laura Palmer",
+        "attended": false
+      },
+      {
+        "id": "S013",
+        "name": "Michael Jordan",
+        "attended": false
+      },
+      {
+        "id": "S014",
+        "name": "Nancy Drew",
+        "attended": false
+      },
+      {
+        "id": "S015",
+        "name": "Oliver Twist",
+        "attended": false
+      },
+      {
+        "id": "S016",
+        "name": "Patricia Lee",
+        "attended": false
+      },
+      {
+        "id": "S017",
+        "name": "Quincy Jones",
+        "attended": false
+      },
+      {
+        "id": "S018",
+        "name": "Rachel Green",
+        "attended": false
+      },
+      {
+        "id": "S019",
+        "name": "Steve Rogers",
+        "attended": false
+      },
+      {
+        "id": "S020",
+        "name": "Tina Turner",
+        "attended": false
+      }
+    ]
+  }
+]

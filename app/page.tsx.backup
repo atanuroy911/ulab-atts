@@ -1,0 +1,510 @@
+'use client';
+
+import { useState, useEffect } from 'react';
+import QRCode from 'qrcode';
+import { Course, Student } from '@/lib/types';
+import { attendanceToCSV, downloadCSV } from '@/lib/csv-utils';
+import Navbar from './components/Navbar';
+import ManualAttendanceControl from './components/ManualAttendanceControl';
+
+export default function Home() {
+  const [csvData, setCsvData] = useState('');
+  const [courseName, setCourseName] = useState('');
+  const [courseId, setCourseId] = useState('');
+  const [semester, setSemester] = useState('');
+  const [section, setSection] = useState('');
+  const [currentCourse, setCurrentCourse] = useState<Course | null>(null);
+  const [qrCodeUrl, setQrCodeUrl] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
+  const [uploadedFile, setUploadedFile] = useState<File | null>(null);
+  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+  const [selectedLoadDate, setSelectedLoadDate] = useState(new Date().toISOString().split('T')[0]);
+
+  // Auto-refresh course data every 5 seconds when active
+  useEffect(() => {
+    if (!currentCourse?.sessionId) return;
+
+    const interval = setInterval(async () => {
+      try {
+        const response = await fetch(`/api/course?sessionId=${currentCourse.sessionId}`);
+        if (response.ok) {
+          const data = await response.json();
+          setCurrentCourse(data);
+        }
+      } catch (err) {
+        console.error('Error refreshing course:', err);
+      }
+    }, 5000);
+
+    return () => clearInterval(interval);
+  }, [currentCourse?.sessionId]);
+
+  const handleCreateCourse = async () => {
+    setError('');
+    setSuccess('');
+    setLoading(true);
+
+    try {
+      const response = await fetch('/api/course', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          csvData,
+          courseName,
+          courseId,
+          semester,
+          section,
+          selectedDate,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to create course');
+      }
+
+      // Fetch the created course
+      const courseResponse = await fetch(`/api/course?sessionId=${data.sessionId}`);
+      const courseData = await courseResponse.json();
+      setCurrentCourse(courseData);
+
+      // Generate QR code
+      const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || window.location.origin;
+      const attendUrl = `${siteUrl}/attend?sessionId=${data.sessionId}`;
+      const qrUrl = await QRCode.toDataURL(attendUrl, { width: 300 });
+      setQrCodeUrl(qrUrl);
+
+      setSuccess(`Course created successfully for ${selectedDate}! ${data.students} students loaded.`);
+      
+      // Clear form
+      setCsvData('');
+      setCourseName('');
+      setCourseId('');
+      setSemester('');
+      setSection('');
+      // Keep selected date for next use
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleExport = async () => {
+    if (!currentCourse?.sessionId) return;
+
+    setError('');
+    setLoading(true);
+
+    try {
+      const response = await fetch('/api/export', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sessionId: currentCourse.sessionId }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to export attendance');
+      }
+
+      // Generate CSV with date columns
+      const csvContent = attendanceToCSV(data.exportData.students, {
+        courseName: data.exportData.courseName,
+        courseId: data.exportData.courseId,
+        semester: data.exportData.semester,
+        section: data.exportData.section,
+      });
+
+      const filename = `attendance_${data.exportData.courseId}_${data.exportData.semester}_${data.exportData.section}.csv`;
+      downloadCSV(csvContent, filename);
+
+      setSuccess('Attendance exported successfully! CSV file downloaded. MongoDB cleared.');
+      
+      // Clear current session
+      setCurrentCourse(null);
+      setQrCodeUrl('');
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.name.endsWith('.csv')) {
+      setError('Please upload a CSV file');
+      e.target.value = '';
+      return;
+    }
+
+    setUploadedFile(file);
+    setError('');
+    setSuccess('');
+    setLoading(true);
+
+    try {
+      const fileContent = await file.text();
+
+      const response = await fetch('/api/load', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          fileContent,
+          selectedDate: selectedLoadDate,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to load file');
+      }
+
+      // Fetch the created course
+      const courseResponse = await fetch(`/api/course?sessionId=${data.sessionId}`);
+      const courseData = await courseResponse.json();
+      setCurrentCourse(courseData);
+
+      // Generate QR code
+      const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || window.location.origin;
+      const attendUrl = `${siteUrl}/attend?sessionId=${data.sessionId}`;
+      const qrUrl = await QRCode.toDataURL(attendUrl, { width: 300 });
+      setQrCodeUrl(qrUrl);
+
+      setSuccess(data.message + ` (${data.students} students loaded)`);
+      setUploadedFile(null);
+    } catch (err: any) {
+      setError(err.message);
+      setUploadedFile(null);
+    } finally {
+      setLoading(false);
+      // Reset file input
+      e.target.value = '';
+    }
+  };
+
+  const handleToggleAttendance = async (studentId: string, attended: boolean) => {
+    if (!currentCourse?.sessionId) return;
+
+    setError('');
+
+    try {
+      const response = await fetch('/api/attend/manual', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          sessionId: currentCourse.sessionId,
+          studentId,
+          attended,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to update attendance');
+      }
+
+      // Refresh course data
+      const courseResponse = await fetch(`/api/course?sessionId=${currentCourse.sessionId}`);
+      if (courseResponse.ok) {
+        const courseData = await courseResponse.json();
+        setCurrentCourse(courseData);
+      }
+    } catch (err: any) {
+      setError(err.message);
+    }
+  };
+
+  const attendedCount = currentCourse?.students.filter((s: Student) => {
+    const currentDate = currentCourse?.currentDate || new Date().toISOString().split('T')[0];
+    return s.attendance?.[currentDate]?.attended;
+  }).length || 0;
+  const totalCount = currentCourse?.students.length || 0;
+
+  return (
+    <>
+      <Navbar />
+      <div className="min-h-screen p-4 sm:p-8 bg-background">
+        <div className="max-w-7xl mx-auto"
+>
+        <h1 className="text-4xl font-bold mb-8 text-gray-900">Attendance Management System</h1>
+
+        {error && (
+          <div className="mb-4 p-4 bg-red-100 border border-red-400 text-red-700 rounded">
+            {error}
+          </div>
+        )}
+
+        {success && (
+          <div className="mb-4 p-4 bg-green-100 border border-green-400 text-green-700 rounded">
+            {success}
+          </div>
+        )}
+
+        {!currentCourse ? (
+          <div className="space-y-6">
+            {/* Load from File Section */}
+            <div className="bg-white p-6 rounded-lg shadow-md">
+              <h2 className="text-2xl font-semibold mb-4 text-gray-800">Resume Previous Session</h2>
+              <p className="text-sm text-gray-600 mb-4">
+                Upload a previously exported CSV file to resume. If today's date exists, attendance will be restored. If it's a new date, a fresh session will start.
+              </p>
+              
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Attendance Date
+                </label>
+                <input
+                  type="date"
+                  value={selectedLoadDate}
+                  onChange={(e) => setSelectedLoadDate(e.target.value)}
+                  className="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
+                />
+                <p className="text-sm text-gray-500 mt-1">
+                  Select the date for this attendance session. If this date exists in the CSV, previous attendance will be restored.
+                </p>
+              </div>
+
+              <div className="flex items-center gap-4">
+                <label className="flex-1">
+                  <input
+                    type="file"
+                    accept=".csv"
+                    onChange={handleFileUpload}
+                    disabled={loading}
+                    className="block w-full text-sm text-gray-900 border border-gray-300 rounded cursor-pointer bg-gray-50 focus:outline-none file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 disabled:opacity-50"
+                  />
+                </label>
+              </div>
+            </div>
+
+            {/* Divider */}
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-gray-300"></div>
+              </div>
+              <div className="relative flex justify-center text-sm">
+                <span className="px-2 bg-gray-50 text-gray-500">OR</span>
+              </div>
+            </div>
+
+            {/* Create New Session Section */}
+            <div className="bg-white p-6 rounded-lg shadow-md">
+            <h2 className="text-2xl font-semibold mb-4 text-gray-800">Create New Session</h2>
+            
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Course Name
+                </label>
+                <input
+                  type="text"
+                  value={courseName}
+                  onChange={(e) => setCourseName(e.target.value)}
+                  className="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
+                  placeholder="e.g., Computer Science 101"
+                />
+              </div>
+
+              <div className="grid grid-cols-3 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Course ID
+                  </label>
+                  <input
+                    type="text"
+                    value={courseId}
+                    onChange={(e) => setCourseId(e.target.value)}
+                    className="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
+                    placeholder="e.g., CS101"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Semester
+                  </label>
+                  <input
+                    type="text"
+                    value={semester}
+                    onChange={(e) => setSemester(e.target.value)}
+                    className="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
+                    placeholder="e.g., Fall 2025"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Section
+                  </label>
+                  <input
+                    type="text"
+                    value={section}
+                    onChange={(e) => setSection(e.target.value)}
+                    className="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
+                    placeholder="e.g., A"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Attendance Date
+                </label>
+                <input
+                  type="date"
+                  value={selectedDate}
+                  onChange={(e) => setSelectedDate(e.target.value)}
+                  className="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
+                />
+                <p className="text-sm text-gray-500 mt-1">
+                  Select the date for this attendance session
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Student List (CSV Format: ID, Name)
+                </label>
+                <textarea
+                  value={csvData}
+                  onChange={(e) => setCsvData(e.target.value)}
+                  className="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent font-mono text-sm text-gray-900"
+                  rows={10}
+                  placeholder="S001,John Doe&#10;S002,Jane Smith&#10;S003,Bob Johnson"
+                />
+                <p className="text-sm text-gray-500 mt-1">
+                  Paste student data in CSV format: Student ID, Student Name (one per line)
+                </p>
+              </div>
+
+              <button
+                onClick={handleCreateCourse}
+                disabled={loading || !csvData || !courseName || !courseId || !semester || !section}
+                className="w-full bg-blue-600 text-white py-3 px-4 rounded font-semibold hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition"
+              >
+                {loading ? 'Creating...' : 'Start Attendance Session'}
+              </button>
+            </div>
+            </div>
+          </div>
+        ) : (
+          <div className="space-y-6">
+            <div className="bg-white p-6 rounded-lg shadow-md">
+              <h2 className="text-2xl font-semibold mb-4 text-gray-800">
+                {currentCourse.courseName}
+              </h2>
+              <div className="grid grid-cols-5 gap-4 mb-4 text-sm">
+                <div>
+                  <span className="font-medium text-gray-700">Course ID:</span>{' '}
+                  <span className="text-gray-900">{currentCourse.courseId}</span>
+                </div>
+                <div>
+                  <span className="font-medium text-gray-700">Semester:</span>{' '}
+                  <span className="text-gray-900">{currentCourse.semester}</span>
+                </div>
+                <div>
+                  <span className="font-medium text-gray-700">Section:</span>{' '}
+                  <span className="text-gray-900">{currentCourse.section}</span>
+                </div>
+                <div>
+                  <span className="font-medium text-gray-700">Date:</span>{' '}
+                  <span className="text-gray-900 font-semibold">{currentCourse.currentDate}</span>
+                </div>
+                <div>
+                  <span className="font-medium text-gray-700">Attendance:</span>{' '}
+                  <span className="text-gray-900 font-semibold">
+                    {attendedCount} / {totalCount}
+                  </span>
+                </div>
+              </div>
+
+              <div className="flex gap-4">
+                <button
+                  onClick={handleExport}
+                  disabled={loading}
+                  className="bg-green-600 text-white py-2 px-6 rounded font-semibold hover:bg-green-700 disabled:bg-gray-400 transition"
+                >
+                  Export & End Session
+                </button>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              <div className="lg:col-span-2 bg-white p-6 rounded-lg shadow-md">
+                <h3 className="text-xl font-semibold mb-4 text-gray-800">Student List</h3>
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead className="bg-gray-100">
+                      <tr>
+                        <th className="px-4 py-2 text-left text-sm font-medium text-gray-700">ID</th>
+                        <th className="px-4 py-2 text-left text-sm font-medium text-gray-700">Name</th>
+                        <th className="px-4 py-2 text-left text-sm font-medium text-gray-700">Status</th>
+                        <th className="px-4 py-2 text-left text-sm font-medium text-gray-700">Time</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-200">
+                      {currentCourse.students.map((student: Student, index: number) => {
+                        const currentDate = currentCourse.currentDate || new Date().toISOString().split('T')[0];
+                        const todayAttendance = student.attendance?.[currentDate];
+                        const attended = todayAttendance?.attended || false;
+                        const attendedAt = todayAttendance?.attendedAt;
+                        
+                        return (
+                        <tr key={index} className={attended ? 'bg-green-50' : ''}>
+                          <td className="px-4 py-2 text-sm text-gray-900">{student.id}</td>
+                          <td className="px-4 py-2 text-sm text-gray-900">{student.name}</td>
+                          <td className="px-4 py-2 text-sm">
+                            {attended ? (
+                              <span className="text-green-600 font-semibold">✓ Present</span>
+                            ) : (
+                              <span className="text-gray-400">Absent</span>
+                            )}
+                          </td>
+                          <td className="px-4 py-2 text-sm text-gray-600">
+                            {attendedAt
+                              ? new Date(attendedAt).toLocaleTimeString()
+                              : '-'}
+                          </td>
+                        </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              <div className="bg-white p-6 rounded-lg shadow-md">
+                <h3 className="text-xl font-semibold mb-4 text-gray-800">QR Code</h3>
+                <div className="flex flex-col items-center">
+                  {qrCodeUrl && (
+                    <>
+                      <img src={qrCodeUrl} alt="Attendance QR Code" className="border-4 border-gray-200 rounded" />
+                      <p className="text-sm text-gray-600 mt-4 text-center">
+                        Students scan this QR code to mark attendance
+                      </p>
+                      <p className="text-xs text-gray-500 mt-2 break-all text-center">
+                        {process.env.NEXT_PUBLIC_SITE_URL || window.location.origin}/attend?sessionId={currentCourse.sessionId}
+                      </p>
+                    </>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+    </>
+  );
+}
+

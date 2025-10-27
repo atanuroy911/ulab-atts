@@ -1,226 +1,449 @@
-# ULab Attendance Tracking System# Attendance Management System
+# ULab Attendance Tracking System# ULab Attendance Tracking System# Attendance Management System
 
 
 
-A comprehensive Next.js application for managing student attendance with QR code generation, **date-wise CSV tracking**, and MongoDB temporary storage.A comprehensive web-based attendance management system built with Next.js, MongoDB, and QR code technology.
+> A comprehensive Next.js application for managing student attendance with QR codes, date-wise CSV tracking, and MongoDB storage.
 
 
 
-## Features## Features
+![Status](https://img.shields.io/badge/status-production%20ready-brightgreen)A comprehensive Next.js application for managing student attendance with QR code generation, **date-wise CSV tracking**, and MongoDB temporary storage.A comprehensive web-based attendance management system built with Next.js, MongoDB, and QR code technology.
+
+![Version](https://img.shields.io/badge/version-2.0.0-blue)
+
+![License](https://img.shields.io/badge/license-MIT-green)
 
 
 
-1. **CSV Import**: Paste CSV data with student information to create a new session- **CSV Student Import**: Paste student data (ID, Name) to quickly create course rosters
+---## Features## Features
 
-2. **QR Code Generation**: Automatically generates a QR code for students to scan and mark attendance- **QR Code Generation**: Automatically generate QR codes for easy attendance marking
+
+
+## 🚀 Quick Links
+
+
+
+- **📚 [Complete Documentation](./DOCS/README.md)** - Full documentation index1. **CSV Import**: Paste CSV data with student information to create a new session- **CSV Student Import**: Paste student data (ID, Name) to quickly create course rosters
+
+- **⚡ [Quick Start Guide](./DOCS/01-QUICK-START.md)** - Get running in 5 minutes
+
+- **👨‍🏫 [Instructor Guide](./DOCS/03-INSTRUCTOR-GUIDE.md)** - For teachers2. **QR Code Generation**: Automatically generates a QR code for students to scan and mark attendance- **QR Code Generation**: Automatically generate QR codes for easy attendance marking
+
+- **👨‍🎓 [Student Guide](./DOCS/04-STUDENT-GUIDE.md)** - For students
 
 3. **MongoDB Storage**: Temporarily stores session data in MongoDB (cleared on export)- **Real-time Updates**: Dashboard updates every 5 seconds to show current attendance
 
+---
+
 4. **Student Attendance**: Students can mark attendance by entering their ID on a dedicated page- **Duplicate Prevention**: Prevents multiple attendance attempts using IP and User-Agent tracking
+
+## ✨ Key Features
 
 5. **Duplicate Prevention**: Prevents multiple attendance entries using IP address and User-Agent tracking **per date**- **Session Management**: Create temporary sessions stored in MongoDB
 
-6. **Date-Wise CSV Export**: Export attendance data with columns for each date, accumulating across multiple sessions- **Export Functionality**: Export attendance data to JSON with historical tracking
+| Feature | Description |
 
-- **Responsive Design**: Works on desktop and mobile devices
+|---------|-------------|6. **Date-Wise CSV Export**: Export attendance data with columns for each date, accumulating across multiple sessions- **Export Functionality**: Export attendance data to JSON with historical tracking
 
-## Key Innovation: Date-Based Attendance Tracking
+| 📊 **CSV Import/Export** | Paste student lists, export with date-wise columns |
 
-## Prerequisites
+| 🔲 **QR Code Generation** | Automatic QR codes for contactless attendance |- **Responsive Design**: Works on desktop and mobile devices
 
-This system uses a **semester-long CSV file** that accumulates attendance across multiple class sessions:
+| 🗄️ **MongoDB Storage** | Temporary session storage with auto-cleanup |
 
-- Node.js 18+ installed
+| 🛡️ **Duplicate Prevention** | IP/User-Agent tracking prevents proxy attendance |## Key Innovation: Date-Based Attendance Tracking
 
-- **First Export**: CSV has columns for student info + today's date (e.g., `2025-10-27`)- MongoDB instance (local or cloud, e.g., MongoDB Atlas)
+| 📅 **Date-Based Tracking** | One CSV file tracks entire semester |
 
-- **Next Session (Same Day)**: Upload CSV → system restores today's attendance
+| 🌓 **Light/Dark Theme** | Toggle themes with persistent storage |## Prerequisites
 
-- **Next Session (Different Day)**: Upload CSV → system creates NEW column for new date, preserves old dates## Setup Instructions
+| 📝 **Manual Control** | Teachers can manually adjust attendance |
 
-- **Result**: One CSV file tracks attendance for entire semester with date-wise columns
+| 🎓 **Semester Review** | Identify students with excessive absences |This system uses a **semester-long CSV file** that accumulates attendance across multiple class sessions:
 
-### 1. Install Dependencies
+| 📋 **View All Attendance** | Comprehensive grid for all dates |
 
-## Tech Stack
+| 🔧 **Universal Date Support** | Accepts all common date formats (Excel compatible!) |- Node.js 18+ installed
 
-```bash
 
-- **Framework**: Next.js 16.0.0 (App Router)npm install
 
-- **Language**: TypeScript 5```
+---- **First Export**: CSV has columns for student info + today's date (e.g., `2025-10-27`)- MongoDB instance (local or cloud, e.g., MongoDB Atlas)
 
-- **Database**: MongoDB (with official driver)
 
-- **Styling**: Tailwind CSS 4### 2. Configure Environment Variables
 
-- **Libraries**:
+## 🎯 What's Special?- **Next Session (Same Day)**: Upload CSV → system restores today's attendance
 
-  - `qrcode`: QR code generationEdit the `.env.local` file in the project root:
 
-  - `papaparse`: CSV parsing and generation
+
+### Date-Wise Semester Tracking- **Next Session (Different Day)**: Upload CSV → system creates NEW column for new date, preserves old dates## Setup Instructions
+
+
+
+Unlike traditional systems with separate files for each day, this system uses **one CSV file for the entire semester**:- **Result**: One CSV file tracks attendance for entire semester with date-wise columns
+
+
+
+```csv### 1. Install Dependencies
+
+Student ID,Name,...,2025-10-27,2025-10-29,2025-10-30,...,2025-12-15
+
+S001,Alice,...,Present,Absent,Present,...,Present## Tech Stack
+
+S002,Bob,...,Absent,Present,Absent,...,Present
+
+``````bash
+
+
+
+**Benefits:**- **Framework**: Next.js 16.0.0 (App Router)npm install
+
+- ✅ One file per course per semester
+
+- ✅ Easy to analyze attendance patterns- **Language**: TypeScript 5```
+
+- ✅ No file management headaches
+
+- ✅ Excel/Google Sheets compatible- **Database**: MongoDB (with official driver)
+
+
+
+### Excel-Friendly- **Styling**: Tailwind CSS 4### 2. Configure Environment Variables
+
+
+
+Edit CSVs in Excel without worries! The system automatically handles:- **Libraries**:
+
+- ✅ `2025-10-27` (YYYY-MM-DD)
+
+- ✅ `10/27/2025` (M/D/YYYY - Excel format)  - `qrcode`: QR code generationEdit the `.env.local` file in the project root:
+
+- ✅ `27/10/2025` (DD/MM/YYYY - European)
+
+- ✅ `October 27, 2025` (Full month name)  - `papaparse`: CSV parsing and generation
+
+- ✅ And 10+ other date formats!
 
 ```env
 
+---
+
 ## Getting StartedMONGODB_URI=mongodb://localhost:27017
+
+## 🏃 Quick Start
 
 NEXT_PUBLIC_SITE_URL=http://localhost:3000
 
-### Prerequisites```
+### Prerequisites
+
+- Node.js 18+### Prerequisites```
+
+- MongoDB (local or Atlas)
 
 
-
-- Node.js 18+ installed**MongoDB Options:**
-
-- MongoDB instance (local or cloud)- **Local MongoDB**: `mongodb://localhost:27017`
-
-- **MongoDB Atlas**: `mongodb+srv://<username>:<password>@cluster.mongodb.net/`
 
 ### Installation
 
+- Node.js 18+ installed**MongoDB Options:**
+
+```bash
+
+# 1. Clone the repository- MongoDB instance (local or cloud)- **Local MongoDB**: `mongodb://localhost:27017`
+
+git clone https://github.com/atanuroy911/ulab-atts.git
+
+cd ulab-atts- **MongoDB Atlas**: `mongodb+srv://<username>:<password>@cluster.mongodb.net/`
+
+
+
+# 2. Install dependencies### Installation
+
+npm install
+
 ### 3. Start MongoDB (if running locally)
 
-1. Clone the repository
+# 3. Set up environment variables
 
-2. Install dependencies:Make sure MongoDB is running on your system:
+# Edit .env.local with your MongoDB URI1. Clone the repository
 
-   ```bash
+
+
+# 4. Start MongoDB (if local)2. Install dependencies:Make sure MongoDB is running on your system:
+
+net start MongoDB  # Windows
+
+# or   ```bash
+
+mongod  # macOS/Linux
 
    npm install```bash
 
-   ```# Windows (if installed as service)
+# 5. Run development server
 
-net start MongoDB
-
-3. Create a `.env.local` file in the root directory:
-
-   ```env# Or start mongod manually
-
-   MONGODB_URI=your_mongodb_connection_stringmongod --dbpath /path/to/data
-
-   NEXT_PUBLIC_SITE_URL=http://localhost:3000```
-
-   ```
-
-### 4. Run the Development Server
-
-4. Run the development server:
-
-   ```bash```bash
-
-   npm run devnpm run dev
-
-   ``````
+npm run dev   ```# Windows (if installed as service)
 
 
 
-5. Open [http://localhost:3000](http://localhost:3000) in your browserOpen [http://localhost:3000](http://localhost:3000) in your browser.
+# 6. Open browsernet start MongoDB
+
+# Visit http://localhost:3000
+
+```3. Create a `.env.local` file in the root directory:
 
 
 
-## Usage## Usage Guide
+**Detailed Instructions:** [Quick Start Guide](./DOCS/01-QUICK-START.md)   ```env# Or start mongod manually
 
 
+
+---   MONGODB_URI=your_mongodb_connection_stringmongod --dbpath /path/to/data
+
+
+
+## 📖 Documentation   NEXT_PUBLIC_SITE_URL=http://localhost:3000```
+
+
+
+### Getting Started   ```
+
+1. [Quick Start Guide](./DOCS/01-QUICK-START.md) - Installation and first run
+
+2. [System Overview](./DOCS/02-SYSTEM-OVERVIEW.md) - What is this system?### 4. Run the Development Server
+
+
+
+### User Guides4. Run the development server:
+
+3. [Instructor Guide](./DOCS/03-INSTRUCTOR-GUIDE.md) - For teachers
+
+4. [Student Guide](./DOCS/04-STUDENT-GUIDE.md) - For students   ```bash```bash
+
+
+
+### Technical Documentation   npm run devnpm run dev
+
+5. [System Architecture](./DOCS/05-ARCHITECTURE.md) - Complete diagrams
+
+6. [Features Reference](./DOCS/06-FEATURES.md) - All features explained   ``````
+
+7. [CSV & Date Management](./DOCS/07-CSV-DATE-MANAGEMENT.md) - Date-wise tracking
+
+
+
+### Troubleshooting
+
+8. [Debug Guide](./DOCS/08-DEBUG-GUIDE.md) - Solve CSV issues5. Open [http://localhost:3000](http://localhost:3000) in your browserOpen [http://localhost:3000](http://localhost:3000) in your browser.
+
+9. [Excel CSV Fix](./DOCS/09-EXCEL-FIX.md) - Excel compatibility
+
+
+
+### Deployment
+
+10. [Deployment Guide](./DOCS/10-DEPLOYMENT.md) - Production setup## Usage## Usage Guide
+
+
+
+### Testing
+
+11. [Sample Data](./DOCS/11-SAMPLE-DATA.md) - Test data and scenarios
 
 ### Creating a New Session (First Day of Semester)### For Instructors (Dashboard)
 
+**📚 [Full Documentation Index](./DOCS/README.md)**
 
+
+
+---
 
 1. Navigate to the "Create New Session" section1. **Create a New Session**
 
+## 🛠️ Technology Stack
+
 2. Fill in course information (Course Name, ID, Semester, Section)   - Fill in course details (Name, ID, Semester, Section)
 
-3. Paste CSV data in the format: `StudentID,StudentName`   - Paste student data in CSV format:
+- **Frontend:** Next.js 16, React 19, TypeScript 5, Tailwind CSS 4
 
-4. Click "Start Attendance Session"     ```
+- **Backend:** Next.js API Routes, Node.js 18+3. Paste CSV data in the format: `StudentID,StudentName`   - Paste student data in CSV format:
+
+- **Database:** MongoDB
+
+- **Libraries:** qrcode, papaparse4. Click "Start Attendance Session"     ```
+
+- **Deployment:** Vercel-ready
 
 5. QR code will be generated - share it with students     S001,John Doe
 
+---
+
 6. Export when done - CSV will have one date column     S002,Jane Smith
+
+## 🔒 Security Features
 
      S003,Bob Johnson
 
-### Resuming Session (Same Day)     ```
+- ✅ Duplicate prevention (IP + User-Agent tracking)
 
-   - Click "Start Attendance Session"
+- ✅ Session validation### Resuming Session (Same Day)     ```
+
+- ✅ Student ID verification
+
+- ✅ Input sanitization   - Click "Start Attendance Session"
+
+- ✅ TypeScript type safety
 
 1. Navigate to the "Resume Previous Session" section
 
+---
+
 2. Upload the previously exported CSV file2. **Share QR Code**
+
+## 📊 Typical Usage
 
 3. **System detects today's date exists in CSV**   - Display the generated QR code to students
 
-4. Restores attendance from earlier today   - Students can scan it with their phones
+```
 
-5. Students who already attended show as "Present"
+1. Instructor creates session (or uploads previous CSV)4. Restores attendance from earlier today   - Students can scan it with their phones
 
-6. Export again - same date column gets updated3. **Monitor Attendance**
+2. System generates QR code
 
-   - Watch real-time updates as students mark attendance
+3. Students scan and enter ID5. Students who already attended show as "Present"
 
-### Resuming Session (Different Day)   - See who attended and when
+4. Real-time dashboard shows attendance
 
-   - View attendance count (e.g., 15/30)
+5. Export CSV at end of class6. Export again - same date column gets updated3. **Monitor Attendance**
 
-1. Upload the previously exported CSV file
+6. MongoDB automatically cleared
 
-2. **System detects today's date is NOT in CSV**4. **Export Data**
-
-3. Creates fresh session with empty attendance for today   - Click "Export & End Session" when done
-
-4. Previous dates' attendance preserved   - Download JSON file with attendance records
-
-5. Students mark attendance for new day   - Data is automatically saved in `public/exports/` for future reference
-
-6. Export - CSV now has MULTIPLE date columns
-
-### For Students (Attendance Page)
-
-### Student Attendance
-
-1. **Scan QR Code**
-
-1. Students scan the QR code or visit the attendance URL   - Use your phone camera or QR scanner app
-
-2. Enter their Student ID   - Opens the attendance page automatically
-
-3. Click "Mark Attendance"
-
-4. System validates ID and prevents duplicate entries (per date)2. **Enter Student ID**
-
-   - Type your student ID exactly as registered
-
-### Exporting Data   - Click "Mark Attendance"
-
-
-
-1. Click "Export & End Session" on the dashboard3. **Confirmation**
-
-2. CSV file downloads with date-wise columns   - See success message with your name
-
-3. MongoDB is completely cleared   - You cannot mark attendance twice
-
-4. Use exported CSV to resume sessions on different days
-
-## System Architecture
-
-## Project Structure
-
-### Data Flow
+7. Next class: Upload CSV to continue   - Watch real-time updates as students mark attendance
 
 ```
 
-ulab-atts/1. **Session Creation**: Instructor creates session → Data stored in MongoDB
+### Resuming Session (Different Day)   - See who attended and when
 
-├── app/2. **QR Code**: Generated with URL: `{SITE_URL}/attend?sessionId={sessionId}`
+**Time Investment:** ~5-10 minutes overhead per class
 
-│   ├── api/3. **Student Attendance**: Student scans → Enters ID → Validated against course roster
+   - View attendance count (e.g., 15/30)
 
-│   │   ├── attend/route.ts       # Student attendance endpoint (date-aware)4. **Duplicate Check**: System checks IP/User-Agent to prevent proxy attendance
+---
 
-│   │   ├── course/route.ts       # Create new course session5. **Real-time Updates**: Dashboard polls every 5 seconds for updates
+1. Upload the previously exported CSV file
 
-│   │   ├── export/route.ts       # Export and clear database6. **Export**: Attendance saved to JSON → MongoDB session cleared
+## 🌟 Recent Updates
+
+2. **System detects today's date is NOT in CSV**4. **Export Data**
+
+### Version 2.0.0 (Latest)
+
+- ✅ Universal date format support (all common formats)3. Creates fresh session with empty attendance for today   - Click "Export & End Session" when done
+
+- ✅ Enhanced CSV debugging with detailed logs
+
+- ✅ Excel compatibility improvements4. Previous dates' attendance preserved   - Download JSON file with attendance records
+
+- ✅ View all attendance feature with comprehensive grid
+
+- ✅ Light/dark theme with persistent toggle5. Students mark attendance for new day   - Data is automatically saved in `public/exports/` for future reference
+
+- ✅ Manual attendance control with search
+
+- ✅ Semester end review modal6. Export - CSV now has MULTIPLE date columns
+
+- ✅ Leave approval system (convert absences to present)
+
+- ✅ Improved UI/UX throughout### For Students (Attendance Page)
+
+
+
+---### Student Attendance
+
+
+
+## 🤝 Contributing1. **Scan QR Code**
+
+
+
+Contributions are welcome! Please feel free to submit issues and enhancement requests.1. Students scan the QR code or visit the attendance URL   - Use your phone camera or QR scanner app
+
+
+
+---2. Enter their Student ID   - Opens the attendance page automatically
+
+
+
+## 📄 License3. Click "Mark Attendance"
+
+
+
+MIT License - See LICENSE file for details4. System validates ID and prevents duplicate entries (per date)2. **Enter Student ID**
+
+
+
+---   - Type your student ID exactly as registered
+
+
+
+## 🆘 Support### Exporting Data   - Click "Mark Attendance"
+
+
+
+- **Documentation:** [DOCS folder](./DOCS/README.md)
+
+- **Debug Issues:** [Debug Guide](./DOCS/08-DEBUG-GUIDE.md)
+
+- **Contact:** Check repository issues1. Click "Export & End Session" on the dashboard3. **Confirmation**
+
+
+
+---2. CSV file downloads with date-wise columns   - See success message with your name
+
+
+
+## 🙏 Acknowledgments3. MongoDB is completely cleared   - You cannot mark attendance twice
+
+
+
+Built with Next.js, MongoDB, and modern web technologies for educational institutions worldwide.4. Use exported CSV to resume sessions on different days
+
+
+
+---## System Architecture
+
+
+
+## 📝 Quick Reference## Project Structure
+
+
+
+| Task | Link |### Data Flow
+
+|------|------|
+
+| Install | [Quick Start](./DOCS/01-QUICK-START.md) |```
+
+| Teacher Guide | [Instructor Guide](./DOCS/03-INSTRUCTOR-GUIDE.md) |
+
+| Student Help | [Student Guide](./DOCS/04-STUDENT-GUIDE.md) |ulab-atts/1. **Session Creation**: Instructor creates session → Data stored in MongoDB
+
+| CSV Issues | [Debug Guide](./DOCS/08-DEBUG-GUIDE.md) |
+
+| Excel Problems | [Excel Fix](./DOCS/09-EXCEL-FIX.md) |├── app/2. **QR Code**: Generated with URL: `{SITE_URL}/attend?sessionId={sessionId}`
+
+| Deploy | [Deployment](./DOCS/10-DEPLOYMENT.md) |
+
+| All Docs | [Documentation Index](./DOCS/README.md) |│   ├── api/3. **Student Attendance**: Student scans → Enters ID → Validated against course roster
+
+
+
+---│   │   ├── attend/route.ts       # Student attendance endpoint (date-aware)4. **Duplicate Check**: System checks IP/User-Agent to prevent proxy attendance
+
+
+
+**Status:** ✅ Production Ready | **Version:** 2.0.0 | **Last Updated:** October 27, 2025│   │   ├── course/route.ts       # Create new course session5. **Real-time Updates**: Dashboard polls every 5 seconds for updates
+
+
+
+**Start Here:** [Quick Start Guide](./DOCS/01-QUICK-START.md) 🚀│   │   ├── export/route.ts       # Export and clear database6. **Export**: Attendance saved to JSON → MongoDB session cleared
+
 
 │   │   ├── load/route.ts         # Load from CSV (date detection)
 
@@ -511,5 +734,6 @@ Feel free to submit issues and enhancement requests!
 ## License
 
 MIT
-#   u l a b - a t t s  
+#   u l a b - a t t s 
+ 
  

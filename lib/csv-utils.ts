@@ -40,44 +40,25 @@ export function parseCSV(csvText: string): CSVStudent[] {
  * Parse exported CSV with date columns
  */
 export function parseExportedCSV(csvText: string): ParsedCSVData {
-  console.log('🔍 [CSV Parser] Starting CSV parsing...');
-  console.log('📄 [CSV Parser] CSV length:', csvText.length, 'characters');
-  
   const parsed = Papa.parse<any>(csvText.trim(), {
     header: true,
     skipEmptyLines: true,
   });
 
-  console.log('📊 [CSV Parser] Papa Parse results:', {
-    dataRows: parsed.data.length,
-    errors: parsed.errors.length,
-    meta: parsed.meta,
-  });
-
   if (parsed.errors.length > 0) {
-    console.error('❌ [CSV Parser] Parsing errors:', parsed.errors);
     throw new Error(`CSV parsing error: ${parsed.errors[0].message}`);
   }
 
   if (parsed.data.length === 0) {
-    console.error('❌ [CSV Parser] No data found in CSV');
     throw new Error('No data found in CSV');
   }
 
   const firstRow = parsed.data[0];
-  console.log('📋 [CSV Parser] First row columns:', Object.keys(firstRow));
   
   const courseName = firstRow['Course Name'] || '';
   const courseId = firstRow['Course ID'] || '';
   const semester = firstRow['Semester'] || '';
   const section = firstRow['Section'] || '';
-
-  console.log('🏫 [CSV Parser] Course info:', {
-    courseName,
-    courseId,
-    semester,
-    section,
-  });
 
   // Helper function to normalize date to YYYY-MM-DD format
   const normalizeDate = (dateStr: string): string | null => {
@@ -186,10 +167,9 @@ export function parseExportedCSV(csvText: string): ParsedCSVData {
         }
       }
       
-      console.warn(`⚠️ [CSV Parser] Could not parse date format: "${dateStr}"`);
+      console.warn(`⚠️ Could not parse date: "${dateStr}"`);
       return null;
     } catch (error) {
-      console.error(`❌ [CSV Parser] Error parsing date "${dateStr}":`, error);
       return null;
     }
   };
@@ -207,8 +187,6 @@ export function parseExportedCSV(csvText: string): ParsedCSVData {
     return normalizeDate(key) !== null;
   });
 
-  console.log('📅 [CSV Parser] Raw date columns found:', rawDateColumns);
-
   // Create a mapping of raw dates to normalized dates
   const dateMapping: Record<string, string> = {};
   rawDateColumns.forEach(rawDate => {
@@ -219,15 +197,9 @@ export function parseExportedCSV(csvText: string): ParsedCSVData {
   });
 
   const dateColumns = Object.values(dateMapping); // These are normalized YYYY-MM-DD dates
-  
-  console.log('📅 [CSV Parser] Date mapping:', dateMapping);
-  console.log('📅 [CSV Parser] Normalized date columns:', dateColumns);
-  console.log('📅 [CSV Parser] Total dates:', dateColumns.length);
 
-  const students = parsed.data.map((row: any, index: number) => {
+  const students = parsed.data.map((row: any) => {
     const attendance: Record<string, boolean> = {};
-    let presentCount = 0;
-    let absentCount = 0;
     
     // Use the raw date columns and map them to normalized dates
     rawDateColumns.forEach(rawDate => {
@@ -240,39 +212,14 @@ export function parseExportedCSV(csvText: string): ParsedCSVData {
         const normalized = value.toLowerCase().trim();
         const isPresent = normalized === 'present' || normalized === 'yes' || normalized === '1' || normalized === 'true';
         attendance[normalizedDate] = isPresent; // Store with normalized date
-        
-        if (isPresent) {
-          presentCount++;
-        } else {
-          absentCount++;
-        }
       }
     });
 
-    const studentInfo = {
+    return {
       id: row['Student ID'] || '',
       name: row['Student Name'] || '',
       attendance,
     };
-
-    if (index === 0) {
-      console.log('👤 [CSV Parser] Sample student (first row):', {
-        id: studentInfo.id,
-        name: studentInfo.name,
-        attendanceDates: Object.keys(studentInfo.attendance).length,
-        presentCount,
-        absentCount,
-        sampleAttendance: Object.entries(studentInfo.attendance).slice(0, 3),
-      });
-    }
-
-    return studentInfo;
-  });
-
-  console.log('✅ [CSV Parser] Parsing complete:', {
-    totalStudents: students.length,
-    totalDates: dateColumns.length,
-    courseName,
   });
 
   return {

@@ -1,6 +1,91 @@
 # Netlify Deployment Fix Guide
 
-## 🚨 Problem: 504 Gateway Timeout
+## 🚨 Problem: 504 Gateway Timeout & SSL Errors
+
+You may experience two types of errors on Netlify:
+1. **504 Gateway Timeout** - Function takes too long
+2. **SSL/TLS Error (alert 80)** - MongoDB Atlas connection issue
+
+---
+
+## ❌ SSL/TLS Connection Error (Most Common!)
+
+### Error Message:
+```
+error:0A000438:SSL routines:ssl3_read_bytes:tlsv1 alert unknown ca
+SSL alert number 80
+```
+
+### Root Cause:
+MongoDB Atlas is rejecting the connection from Netlify's serverless functions.
+
+### ✅ Solution: Fix MongoDB Atlas IP Whitelist
+
+#### Step 1: Allow All IP Addresses
+1. Go to [MongoDB Atlas](https://cloud.mongodb.com/)
+2. Click your cluster → **Network Access** (left sidebar)
+3. Click **+ ADD IP ADDRESS**
+4. Click **ALLOW ACCESS FROM ANYWHERE**
+5. This adds `0.0.0.0/0` to whitelist
+6. Click **Confirm**
+
+⚠️ **CRITICAL:** Without `0.0.0.0/0`, Netlify cannot connect!
+
+#### Step 2: Verify Database User
+1. In MongoDB Atlas → **Database Access**
+2. Make sure your user has:
+   - **Password Authentication** (not SCRAM)
+   - **Built-in Role:** `Atlas admin` or `Read and write to any database`
+3. Note the username and password
+
+#### Step 3: Verify Connection String
+Your `MONGODB_URI` should look like:
+```
+mongodb+srv://<username>:<password>@cluster0.xxxxx.mongodb.net/?retryWrites=true&w=majority
+```
+
+**Check for:**
+- ✅ Starts with `mongodb+srv://` (not `mongodb://`)
+- ✅ Username and password are correct
+- ✅ No special characters in password (if yes, URL-encode them)
+- ✅ Cluster address is correct
+
+#### Step 4: Set in Netlify
+1. **Netlify Dashboard** → Your Site
+2. **Site Settings** → **Environment Variables**
+3. Add variable:
+   - **Key:** `MONGODB_URI`
+   - **Value:** Your full connection string
+4. Click **Save**
+5. **Trigger redeploy** (needed for env vars to take effect)
+
+#### Step 5: Test Connection
+After redeploying, visit:
+```
+https://your-site.netlify.app/api/health
+```
+
+**Expected Response:**
+```json
+{
+  "mongodbConnection": "connected",
+  "mongodbPing": true,
+  "error": null
+}
+```
+
+**If Failed:**
+```json
+{
+  "mongodbConnection": "failed",
+  "error": "SSL alert number 80",
+  "hint": "Check IP whitelist..."
+}
+```
+
+---
+
+## ⏱️ 504 Gateway Timeout
 
 The 504 errors you're experiencing are due to Netlify's serverless function timeout limits.
 

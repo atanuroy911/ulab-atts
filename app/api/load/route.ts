@@ -115,22 +115,38 @@ export async function POST(request: NextRequest) {
     console.error('[Load API Error]', {
       message: error.message,
       name: error.name,
+      code: error.code,
       stack: error.stack?.split('\n')[0], // First line only
     });
 
-    // Return user-friendly error message
+    // Return user-friendly error message with specific hints
     let errorMessage = 'Failed to load attendance data';
+    let errorHint = '';
     
-    if (error.message?.includes('timeout')) {
-      errorMessage = 'Database operation timed out. Please try again.';
+    if (error.message?.includes('SSL') || error.message?.includes('TLS') || error.message?.includes('0A000438')) {
+      errorMessage = 'MongoDB SSL/TLS connection error';
+      errorHint = 'Please check MongoDB Atlas settings: 1) Network Access → IP Whitelist must include 0.0.0.0/0 (allow from anywhere), 2) Database user has correct permissions, 3) MONGODB_URI is correctly set in Netlify environment variables';
+    } else if (error.message?.includes('timeout')) {
+      errorMessage = 'Database operation timed out';
+      errorHint = 'MongoDB connection is too slow. Check: 1) MongoDB Atlas cluster region (use closest to Netlify), 2) Network Access whitelist includes 0.0.0.0/0, 3) Try upgrading MongoDB Atlas tier';
     } else if (error.message?.includes('CSV')) {
       errorMessage = error.message;
-    } else if (error.message?.includes('MongoDB') || error.message?.includes('Database')) {
-      errorMessage = 'Database connection error. Please check your connection.';
+      errorHint = 'Check CSV format: ensure headers match expected format (Student ID, Student Name, Course Name, etc.)';
+    } else if (error.message?.includes('authentication') || error.message?.includes('auth')) {
+      errorMessage = 'Database authentication failed';
+      errorHint = 'Check MONGODB_URI username and password are correct in Netlify environment variables';
+    } else if (error.message?.includes('Database not configured')) {
+      errorMessage = error.message;
+      errorHint = 'Add MONGODB_URI to Netlify: Site Settings → Environment Variables → Add Variable';
     }
 
     return NextResponse.json(
-      { error: errorMessage, details: error.message },
+      { 
+        error: errorMessage, 
+        details: error.message,
+        hint: errorHint,
+        helpUrl: 'https://github.com/atanuroy911/ulab-atts/blob/main/DOCS/12-NETLIFY-FIX.md'
+      },
       { status: 500 }
     );
   }

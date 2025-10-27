@@ -1,16 +1,30 @@
-import { MongoClient, Db } from 'mongodb';
+import { MongoClient, Db, ServerApiVersion } from 'mongodb';
 
 if (!process.env.MONGODB_URI) {
   throw new Error('Please add your MONGODB_URI to .env.local');
 }
 
 const uri = process.env.MONGODB_URI;
+
+// Netlify-optimized MongoDB options with proper SSL/TLS handling
 const options = {
+  serverApi: {
+    version: ServerApiVersion.v1,
+    strict: true,
+    deprecationErrors: true,
+  },
   maxPoolSize: 10,
-  minPoolSize: 2,
+  minPoolSize: 1,
   maxIdleTimeMS: 30000,
-  serverSelectionTimeoutMS: 5000,
-  socketTimeoutMS: 10000,
+  serverSelectionTimeoutMS: 10000,
+  socketTimeoutMS: 45000,
+  connectTimeoutMS: 10000,
+  retryWrites: true,
+  retryReads: true,
+  // SSL/TLS settings for Netlify serverless compatibility
+  tls: true,
+  tlsAllowInvalidCertificates: false,
+  tlsAllowInvalidHostnames: false,
 };
 
 let client: MongoClient;

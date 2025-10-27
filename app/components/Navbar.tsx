@@ -29,13 +29,13 @@ export default function Navbar() {
           <div className="flex items-center gap-3">
             <Image
               src="/ulab.svg"
-              alt="ULab Logo"
-              width={40}
-              height={40}
-              className="w-10 h-10"
+              alt="ULAB Logo"
+              width={80}
+              height={60}
+              className="w-18 h-18"
             />
             <div>
-              <h1 className="text-xl font-bold text-foreground">ULab Attendance</h1>
+              <h1 className="text-xl font-bold text-foreground">ULAB Attendance</h1>
               <p className="text-xs text-foreground/60">Management System</p>
             </div>
           </div>

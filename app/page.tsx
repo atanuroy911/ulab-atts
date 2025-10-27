@@ -142,7 +142,15 @@ export default function Home() {
     const file = e.target.files?.[0];
     if (!file) return;
 
+    console.log('\n📁 [File Upload] File selected:', {
+      name: file.name,
+      size: file.size,
+      type: file.type,
+      lastModified: new Date(file.lastModified).toISOString(),
+    });
+
     if (!file.name.endsWith('.csv')) {
+      console.error('❌ [File Upload] Invalid file type:', file.name);
       setError('Please upload a CSV file');
       e.target.value = '';
       return;
@@ -154,7 +162,20 @@ export default function Home() {
     setLoading(true);
 
     try {
+      console.log('📖 [File Upload] Reading file content...');
       const fileContent = await file.text();
+      
+      console.log('📄 [File Upload] File content loaded:', {
+        length: fileContent.length,
+        lines: fileContent.split('\n').length,
+        preview: fileContent.substring(0, 200) + '...',
+      });
+
+      console.log('🌐 [File Upload] Sending to API...', {
+        endpoint: '/api/load',
+        selectedDate: selectedLoadDate,
+        contentLength: fileContent.length,
+      });
 
       const response = await fetch('/api/load', {
         method: 'POST',
@@ -167,24 +188,49 @@ export default function Home() {
 
       const data = await response.json();
 
+      console.log('📬 [File Upload] API Response:', {
+        ok: response.ok,
+        status: response.status,
+        data,
+      });
+
       if (!response.ok) {
+        console.error('❌ [File Upload] API Error:', data);
         throw new Error(data.error || 'Failed to load file');
       }
 
       // Fetch the created course
+      console.log('🔄 [File Upload] Fetching course data...', {
+        sessionId: data.sessionId,
+      });
+      
       const courseResponse = await fetch(`/api/course?sessionId=${data.sessionId}`);
       const courseData = await courseResponse.json();
+      
+      console.log('📋 [File Upload] Course data received:', {
+        courseName: courseData.courseName,
+        courseId: courseData.courseId,
+        students: courseData.students?.length,
+        currentDate: courseData.currentDate,
+      });
+      
       setCurrentCourse(courseData);
 
       // Generate QR code
+      console.log('🔲 [File Upload] Generating QR code...');
       const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || window.location.origin;
       const attendUrl = `${siteUrl}/attend?sessionId=${data.sessionId}`;
       const qrUrl = await QRCode.toDataURL(attendUrl, { width: 300 });
       setQrCodeUrl(qrUrl);
 
+      console.log('✅ [File Upload] Upload complete!');
       setSuccess(data.message + ` (${data.students} students loaded)`);
       setUploadedFile(null);
     } catch (err: any) {
+      console.error('💥 [File Upload] Error:', {
+        message: err.message,
+        stack: err.stack,
+      });
       setError(err.message);
       setUploadedFile(null);
     } finally {

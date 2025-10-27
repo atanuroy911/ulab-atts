@@ -40,46 +40,239 @@ export function parseCSV(csvText: string): CSVStudent[] {
  * Parse exported CSV with date columns
  */
 export function parseExportedCSV(csvText: string): ParsedCSVData {
+  console.log('🔍 [CSV Parser] Starting CSV parsing...');
+  console.log('📄 [CSV Parser] CSV length:', csvText.length, 'characters');
+  
   const parsed = Papa.parse<any>(csvText.trim(), {
     header: true,
     skipEmptyLines: true,
   });
 
+  console.log('📊 [CSV Parser] Papa Parse results:', {
+    dataRows: parsed.data.length,
+    errors: parsed.errors.length,
+    meta: parsed.meta,
+  });
+
   if (parsed.errors.length > 0) {
+    console.error('❌ [CSV Parser] Parsing errors:', parsed.errors);
     throw new Error(`CSV parsing error: ${parsed.errors[0].message}`);
   }
 
   if (parsed.data.length === 0) {
+    console.error('❌ [CSV Parser] No data found in CSV');
     throw new Error('No data found in CSV');
   }
 
   const firstRow = parsed.data[0];
+  console.log('📋 [CSV Parser] First row columns:', Object.keys(firstRow));
+  
   const courseName = firstRow['Course Name'] || '';
   const courseId = firstRow['Course ID'] || '';
   const semester = firstRow['Semester'] || '';
   const section = firstRow['Section'] || '';
 
-  // Get all date columns (YYYY-MM-DD format)
-  const dateColumns = Object.keys(firstRow).filter(key => 
-    key.match(/^\d{4}-\d{2}-\d{2}$/)
-  );
+  console.log('🏫 [CSV Parser] Course info:', {
+    courseName,
+    courseId,
+    semester,
+    section,
+  });
 
-  const students = parsed.data.map((row: any) => {
+  // Helper function to normalize date to YYYY-MM-DD format
+  const normalizeDate = (dateStr: string): string | null => {
+    try {
+      // Already in YYYY-MM-DD format
+      if (dateStr.match(/^\d{4}-\d{2}-\d{2}$/)) {
+        return dateStr;
+      }
+      
+      // Try to parse M/D/YYYY or MM/DD/YYYY format (e.g., 10/27/2025, 1/9/2025)
+      const slashMatch = dateStr.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+      if (slashMatch) {
+        const [, month, day, year] = slashMatch;
+        const m = month.padStart(2, '0');
+        const d = day.padStart(2, '0');
+        return `${year}-${m}-${d}`;
+      }
+      
+      // Try to parse DD/MM/YYYY format (e.g., 27/10/2025)
+      const ddmmyyyyMatch = dateStr.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+      if (ddmmyyyyMatch) {
+        const [, first, second, year] = ddmmyyyyMatch;
+        // Ambiguous - try both interpretations and use JavaScript Date to validate
+        const monthFirst = new Date(`${year}-${first.padStart(2, '0')}-${second.padStart(2, '0')}`);
+        const dayFirst = new Date(`${year}-${second.padStart(2, '0')}-${first.padStart(2, '0')}`);
+        
+        if (!isNaN(monthFirst.getTime()) && parseInt(first) <= 12) {
+          // Could be MM/DD/YYYY - already handled above
+        }
+        if (!isNaN(dayFirst.getTime()) && parseInt(first) > 12) {
+          // Must be DD/MM/YYYY
+          return `${year}-${second.padStart(2, '0')}-${first.padStart(2, '0')}`;
+        }
+      }
+      
+      // Try to parse DD-MM-YYYY format (e.g., 27-10-2025)
+      const ddmmyyyyDashMatch = dateStr.match(/^(\d{1,2})-(\d{1,2})-(\d{4})$/);
+      if (ddmmyyyyDashMatch) {
+        const [, day, month, year] = ddmmyyyyDashMatch;
+        return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+      }
+      
+      // Try to parse YYYY/MM/DD format (e.g., 2025/10/27)
+      const yyyySlashMatch = dateStr.match(/^(\d{4})\/(\d{1,2})\/(\d{1,2})$/);
+      if (yyyySlashMatch) {
+        const [, year, month, day] = yyyySlashMatch;
+        return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+      }
+      
+      // Try to parse DD.MM.YYYY format (e.g., 27.10.2025)
+      const dotMatch = dateStr.match(/^(\d{1,2})\.(\d{1,2})\.(\d{4})$/);
+      if (dotMatch) {
+        const [, day, month, year] = dotMatch;
+        return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+      }
+      
+      // Try to parse YYYYMMDD format (e.g., 20251027)
+      const compactMatch = dateStr.match(/^(\d{4})(\d{2})(\d{2})$/);
+      if (compactMatch) {
+        const [, year, month, day] = compactMatch;
+        return `${year}-${month}-${day}`;
+      }
+      
+      // Try to parse Month DD, YYYY format (e.g., October 27, 2025 or Oct 27, 2025)
+      const monthNames = ['january', 'february', 'march', 'april', 'may', 'june', 
+                          'july', 'august', 'september', 'october', 'november', 'december'];
+      const monthAbbrev = ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 
+                          'jul', 'aug', 'sep', 'oct', 'nov', 'dec'];
+      
+      const monthTextMatch = dateStr.match(/^([a-z]+)\s+(\d{1,2}),?\s+(\d{4})$/i);
+      if (monthTextMatch) {
+        const [, monthStr, day, year] = monthTextMatch;
+        const monthLower = monthStr.toLowerCase();
+        let monthNum = monthNames.indexOf(monthLower) + 1;
+        if (monthNum === 0) {
+          monthNum = monthAbbrev.indexOf(monthLower) + 1;
+        }
+        if (monthNum > 0) {
+          return `${year}-${monthNum.toString().padStart(2, '0')}-${day.padStart(2, '0')}`;
+        }
+      }
+      
+      // Try to parse DD Month YYYY format (e.g., 27 October 2025 or 27 Oct 2025)
+      const dayMonthTextMatch = dateStr.match(/^(\d{1,2})\s+([a-z]+),?\s+(\d{4})$/i);
+      if (dayMonthTextMatch) {
+        const [, day, monthStr, year] = dayMonthTextMatch;
+        const monthLower = monthStr.toLowerCase();
+        let monthNum = monthNames.indexOf(monthLower) + 1;
+        if (monthNum === 0) {
+          monthNum = monthAbbrev.indexOf(monthLower) + 1;
+        }
+        if (monthNum > 0) {
+          return `${year}-${monthNum.toString().padStart(2, '0')}-${day.padStart(2, '0')}`;
+        }
+      }
+      
+      // Try using native JavaScript Date parser as fallback
+      const parsedDate = new Date(dateStr);
+      if (!isNaN(parsedDate.getTime())) {
+        const year = parsedDate.getFullYear();
+        const month = (parsedDate.getMonth() + 1).toString().padStart(2, '0');
+        const day = parsedDate.getDate().toString().padStart(2, '0');
+        // Validate it's a reasonable year (between 2000-2100)
+        if (year >= 2000 && year <= 2100) {
+          return `${year}-${month}-${day}`;
+        }
+      }
+      
+      console.warn(`⚠️ [CSV Parser] Could not parse date format: "${dateStr}"`);
+      return null;
+    } catch (error) {
+      console.error(`❌ [CSV Parser] Error parsing date "${dateStr}":`, error);
+      return null;
+    }
+  };
+
+  // Get all date columns - try to detect any column that might be a date
+  const rawDateColumns = Object.keys(firstRow).filter(key => {
+    // Skip known non-date columns
+    const nonDateColumns = ['student id', 'student name', 'course name', 'course id', 
+                            'semester', 'section', 'id', 'name', 'email', 'phone'];
+    if (nonDateColumns.includes(key.toLowerCase())) {
+      return false;
+    }
+    
+    // Try to normalize - if it returns a valid date, it's a date column
+    return normalizeDate(key) !== null;
+  });
+
+  console.log('📅 [CSV Parser] Raw date columns found:', rawDateColumns);
+
+  // Create a mapping of raw dates to normalized dates
+  const dateMapping: Record<string, string> = {};
+  rawDateColumns.forEach(rawDate => {
+    const normalized = normalizeDate(rawDate);
+    if (normalized) {
+      dateMapping[rawDate] = normalized;
+    }
+  });
+
+  const dateColumns = Object.values(dateMapping); // These are normalized YYYY-MM-DD dates
+  
+  console.log('📅 [CSV Parser] Date mapping:', dateMapping);
+  console.log('📅 [CSV Parser] Normalized date columns:', dateColumns);
+  console.log('📅 [CSV Parser] Total dates:', dateColumns.length);
+
+  const students = parsed.data.map((row: any, index: number) => {
     const attendance: Record<string, boolean> = {};
-    dateColumns.forEach(date => {
-      const value = row[date];
+    let presentCount = 0;
+    let absentCount = 0;
+    
+    // Use the raw date columns and map them to normalized dates
+    rawDateColumns.forEach(rawDate => {
+      const normalizedDate = dateMapping[rawDate];
+      if (!normalizedDate) return;
+      
+      const value = row[rawDate]; // Read from the original column name
       // Only process if the cell has a value (not empty/undefined)
       if (value !== undefined && value !== null && value !== '') {
         const normalized = value.toLowerCase().trim();
-        attendance[date] = normalized === 'present' || normalized === 'yes' || normalized === '1' || normalized === 'true';
+        const isPresent = normalized === 'present' || normalized === 'yes' || normalized === '1' || normalized === 'true';
+        attendance[normalizedDate] = isPresent; // Store with normalized date
+        
+        if (isPresent) {
+          presentCount++;
+        } else {
+          absentCount++;
+        }
       }
     });
 
-    return {
+    const studentInfo = {
       id: row['Student ID'] || '',
       name: row['Student Name'] || '',
       attendance,
     };
+
+    if (index === 0) {
+      console.log('👤 [CSV Parser] Sample student (first row):', {
+        id: studentInfo.id,
+        name: studentInfo.name,
+        attendanceDates: Object.keys(studentInfo.attendance).length,
+        presentCount,
+        absentCount,
+        sampleAttendance: Object.entries(studentInfo.attendance).slice(0, 3),
+      });
+    }
+
+    return studentInfo;
+  });
+
+  console.log('✅ [CSV Parser] Parsing complete:', {
+    totalStudents: students.length,
+    totalDates: dateColumns.length,
+    courseName,
   });
 
   return {

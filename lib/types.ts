@@ -6,8 +6,6 @@ export interface Student {
   attendance: Record<string, {
     attended: boolean;
     attendedAt?: Date;
-    ipAddress?: string;
-    userAgent?: string;
   }>;
 }
 
@@ -28,8 +26,6 @@ export interface AttendanceRecord {
   sessionId: string;
   studentId: string;
   date: string;
-  ipAddress: string;
-  userAgent: string;
   timestamp: Date;
 }
 

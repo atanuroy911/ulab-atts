@@ -74,10 +74,20 @@ export default function Home() {
       const courseData = await courseResponse.json();
       setCurrentCourse(courseData);
 
-      // Generate QR code
-      const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || window.location.origin;
+      // Generate QR code with explicit URL format for iPhone compatibility
+      let siteUrl = process.env.NEXT_PUBLIC_SITE_URL || window.location.origin;
+      
+      // Ensure URL has protocol (http:// or https://)
+      if (!siteUrl.startsWith('http://') && !siteUrl.startsWith('https://')) {
+        siteUrl = `https://${siteUrl}`;
+      }
+      
       const attendUrl = `${siteUrl}/attend?sessionId=${data.sessionId}`;
-      const qrUrl = await QRCode.toDataURL(attendUrl, { width: 300 });
+      const qrUrl = await QRCode.toDataURL(attendUrl, { 
+        width: 300,
+        margin: 2,
+        errorCorrectionLevel: 'M'
+      });
       setQrCodeUrl(qrUrl);
 
       setSuccess(`Course created successfully for ${selectedDate}! ${data.students} students loaded.`);
@@ -216,11 +226,22 @@ export default function Home() {
       
       setCurrentCourse(courseData);
 
-      // Generate QR code
+      // Generate QR code with explicit URL format for iPhone compatibility
       console.log('🔲 [File Upload] Generating QR code...');
-      const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || window.location.origin;
+      let siteUrl = process.env.NEXT_PUBLIC_SITE_URL || window.location.origin;
+      
+      // Ensure URL has protocol (http:// or https://)
+      if (!siteUrl.startsWith('http://') && !siteUrl.startsWith('https://')) {
+        siteUrl = `https://${siteUrl}`;
+      }
+      
       const attendUrl = `${siteUrl}/attend?sessionId=${data.sessionId}`;
-      const qrUrl = await QRCode.toDataURL(attendUrl, { width: 300 });
+      console.log('🔗 [File Upload] QR URL:', attendUrl);
+      const qrUrl = await QRCode.toDataURL(attendUrl, { 
+        width: 300,
+        margin: 2,
+        errorCorrectionLevel: 'M'
+      });
       setQrCodeUrl(qrUrl);
 
       console.log('✅ [File Upload] Upload complete!');

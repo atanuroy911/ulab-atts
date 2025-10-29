@@ -14,12 +14,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Get IP and User-Agent for duplicate detection
-    const ipAddress = request.headers.get('x-forwarded-for') || 
-                      request.headers.get('x-real-ip') || 
-                      'unknown';
-    const userAgent = request.headers.get('user-agent') || 'unknown';
-
     const db = await getDatabase();
 
     // Find the course
@@ -56,30 +50,11 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Check for duplicate attendance attempt from different ID but same IP/UserAgent for TODAY
-    const duplicateAttempt = await db.collection('attendance_records').findOne({
-      sessionId,
-      date: currentDate,
-      $or: [
-        { ipAddress, userAgent },
-      ],
-      studentId: { $ne: studentId }
-    });
-
-    if (duplicateAttempt) {
-      return NextResponse.json(
-        { error: 'Attendance already recorded from this device today' },
-        { status: 400 }
-      );
-    }
-
-    // Record attendance
+    // Record attendance (no more IP/UserAgent tracking)
     const attendanceRecord: AttendanceRecord = {
       sessionId,
       studentId,
       date: currentDate,
-      ipAddress,
-      userAgent,
       timestamp: new Date(),
     };
 
@@ -93,8 +68,6 @@ export async function POST(request: NextRequest) {
     student.attendance[currentDate] = {
       attended: true,
       attendedAt: new Date(),
-      ipAddress,
-      userAgent,
     };
 
     await db.collection('courses').updateOne(

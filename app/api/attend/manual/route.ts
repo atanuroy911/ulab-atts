@@ -35,7 +35,7 @@ export async function POST(request: NextRequest) {
     // Use provided date or current date from course
     const targetDate = date || course.currentDate;
 
-    // Update or create attendance record
+    // Update or create attendance record (no IP tracking)
     if (!student.attendance) {
       student.attendance = {};
     }
@@ -44,8 +44,6 @@ export async function POST(request: NextRequest) {
       student.attendance[targetDate] = {
         attended: true,
         attendedAt: new Date(),
-        ipAddress: 'manual',
-        userAgent: 'manual-entry',
       };
     } else {
       // Remove attendance or set to false
